@@ -11,7 +11,7 @@
 // ==/UserScript==
 
 /** @typedef {{ id: string; name: string; disc: number | null; track: number | null; }} NodeBoundTrack */
-/** @typedef {{ id: number; title: number; track_position: number | null; disc_number: number | null; available_countries: string[] }} APITrack */
+/** @typedef {{ id: number; title: number; track_position: number | null; disk_number: number | null; available_countries: string[] }} APITrack */
 
 const DEEZER_API_TRACK_URL = "https://api.deezer.com/track";
 const SCRIPT_TRACK_REGEX = /(https:\/\/www\.deezer\.com\/.{2}\/track\/)(\d*)$/;
@@ -80,15 +80,13 @@ function traverse_track_list_container(node_length) {
 	/** @type {HTMLMetaElement[]} */
 	const nodes = document.querySelectorAll(`meta[property="music:song"]`);
 	const dom_list = traverse_track_list_container(nodes.length);
-	console.log(dom_list);
 
 	for (let i = 0; i < nodes.length; i++) {
 		const node = nodes[i];
 		const [_, __, id] = SCRIPT_TRACK_REGEX.exec(node.content);
 		const data = await fetch_track_data(id);
 
-		const matched = dom_list[`${data.disc_number ?? 1}.${data.track_position}`];
-		console.log({ matched, data, id });
+		const matched = dom_list[`${data.disk_number ?? 1}.${data.track_position}`];
 		if (matched === undefined) {
 			throw new Error(`Failed to a match track from the track list. Current: ${data}`);
 		}
@@ -106,7 +104,7 @@ function traverse_track_list_container(node_length) {
 
 		span.addEventListener("contextmenu", (e) => {
 			e.preventDefault();
-			console.log(countries_string);
+			console.info(countries_string);
 		});
 
 		await sleep();
