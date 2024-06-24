@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         deezer-country-display
+// @name         deezer-display-availability
 // @namespace    http://tampermonkey.net/
 // @version      2024-06-24
 // @description  Displays deezer track availability
@@ -104,7 +104,7 @@ function traverse_track_list_container(node_length) {
 
 		span.addEventListener("contextmenu", (e) => {
 			e.preventDefault();
-			console.info(countries_string);
+			console.info(data.available_countries);
 		});
 
 		await sleep();
