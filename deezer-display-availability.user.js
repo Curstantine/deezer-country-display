@@ -19,7 +19,6 @@
 /** @typedef {{ user_status: { license_country: string } }} DeezerPlayer */
 
 const DEEZER_API_TRACK_URL = "https://api.deezer.com/track";
-const SCRIPT_TRACK_REGEX = /(https:\/\/www\.deezer\.com\/.{2}\/track\/)(\d*)$/;
 const DISPLAY_TRACK_NAME_REGEX = /(\d{1,9999})\.\s(.*$)/;
 
 const MATCHER_TRACK_LIST_CONTAINER = `div[role="rowgroup"].ZOZXb`;
@@ -41,15 +40,15 @@ async function fetch_track_data(id) {
 }
 
 /**
- * @param {number} node_length
+ * @param {number} track_length
  * @returns
  */
-function traverse_track_list_container(node_length) {
+function traverse_track_list_container(track_length) {
 	const track_list_container = document.querySelector(MATCHER_TRACK_LIST_CONTAINER);
 	const track_containers = track_list_container.querySelectorAll(MATCHER_TRACK_CONTAINER);
 
-	if (track_containers.length !== node_length) {
-		throw new Error("The amount of meta nodes do not match the amount of tracks available");
+	if (track_containers.length !== track_length) {
+		throw new Error("The amount of tracks do not match the amount of track containers");
 	}
 
 	/** @type {Record<string, { label_node: Element, title_node: HTMLSpanElement }>} */
@@ -132,25 +131,15 @@ function add_subbing_prob_string(span_node, user_country, countries, track) {
 	/** @type {DeezerPlayer} */
 	const deezer_player = window.dzPlayer;
 
-	/** @type {HTMLMetaElement[]} */
-	const nodes = document.querySelectorAll(`meta[property="music:song"]`);
-	const dom_list = traverse_track_list_container(nodes.length);
+	const dom_list = traverse_track_list_container(deezer_app_state.SONGS.data.length);
 
-	for (let i = 0; i < nodes.length; i++) {
-		const node = nodes[i];
-
-		/** @type {[string, string, string]} */
-		const [_, __, id] = SCRIPT_TRACK_REGEX.exec(node.content);
-		const data = await fetch_track_data(id);
+	for (let i = 0; i < deezer_app_state.SONGS.data.length; i++) {
+		const ajax_track = deezer_app_state.SONGS.data[i];
+		const data = await fetch_track_data(ajax_track.SNG_ID);
 
 		const matched = dom_list[`${data.disk_number ?? 1}.${data.track_position}`];
 		if (matched === undefined) {
 			throw new Error(`Failed to a match track from the track list. Current: ${data}`);
-		}
-
-		const ajax_track = deezer_app_state.SONGS.data.find((x) => x.SNG_ID === id);
-		if (ajax_track === undefined) {
-			throw new Error(`Couldn't find a matching track ${id} in the deezer global state`);
 		}
 
 		const display_spanner = create_availability_span(data.available_countries);
