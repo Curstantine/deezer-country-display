@@ -86,7 +86,7 @@ function traverse_track_list_container(node_length) {
 function create_availability_span(countries) {
 	const countries_string = countries.length <= 4
 		? countries.join(", ")
-		: countries.slice(0, 3).join(", ") + ` and ${data.available_countries.length - 4} more!`;
+		: countries.slice(0, 3).join(", ") + ` and ${countries.length - 4} more!`;
 
 	const text = document.createTextNode(`Available in: ${countries_string}`);
 	const span = document.createElement("span");
@@ -103,11 +103,11 @@ function create_availability_span(countries) {
 /**
  * @param {HTMLSpanElement} span_node
  * @param {string} user_country
- * @param {string[]} available_countries
+ * @param {string[]} countries
  * @param {AjaxTrack} track
  */
-function add_subbing_prob_string(span_node, user_country, available_countries, track) {
-	const not_in_country = !available_countries.includes(user_country);
+function add_subbing_prob_string(span_node, user_country, countries, track) {
+	const not_in_country = !countries.includes(user_country);
 	const has_fallback = "FALLBACK" in track;
 
 	const content = span_node.lastChild.textContent;

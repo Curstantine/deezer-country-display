@@ -1,10 +1,10 @@
 # deezer-display-availability
 
-UserScript to display the countries where a track is available in the deezer site.
+Deezer UserScript to display whether a track will be subbed from another release and the countries where the track is available.
 
 > [!WARNING]
 > This UserScript sends a request per each track in the album to https://api.deezer.com. This is the same reason why the script uses the `context-menu` runner. <br>
-> DO NOT cry after you get ip banned lmao.
+> DO NOT cry after you get ip banned, lol.
 
 ## Usage
 
