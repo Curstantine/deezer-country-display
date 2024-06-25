@@ -8,7 +8,7 @@ UserScript to display the countries where a track is available in the deezer sit
 
 ## Usage
 
-1. Install UserScript by copy pasting the contents in [`deezer-display-availability.user.js`](./deezer-display-availability.js) to a UserScript engine.
+1. Install UserScript by copy pasting the contents in [`deezer-display-availability.user.js`](./deezer-display-availability.user.js) to a UserScript engine.
 2. Enable the script.
 3. Navigate to a url starting with `https://deezer.com/{code}/album/{id}`.
 4. Open the UserScript engine context menu by right clicking on the page.
