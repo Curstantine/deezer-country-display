@@ -13,6 +13,11 @@
 /** @typedef {{ id: string; name: string; disc: number | null; track: number | null; }} NodeBoundTrack */
 /** @typedef {{ id: number; title: number; track_position: number | null; disk_number: number | null; available_countries: string[] }} APITrack */
 
+/** @typedef {{ SNG_ID: string; FALLBACK?: Record<string, unknown>;  }} AjaxTrack */
+/** @typedef {{ SONGS: { data: AjaxTrack[]} }} DeezerAppState */
+
+/** @typedef {{ user_status: { license_country: string } }} DeezerPlayer */
+
 const DEEZER_API_TRACK_URL = "https://api.deezer.com/track";
 const SCRIPT_TRACK_REGEX = /(https:\/\/www\.deezer\.com\/.{2}\/track\/)(\d*)$/;
 const DISPLAY_TRACK_NAME_REGEX = /(\d{1,9999})\.\s(.*$)/;
@@ -26,7 +31,7 @@ async function sleep(ms = 1000) {
 }
 
 /**
- * @param {number} id
+ * @param {string | number} id
  * @returns {Promise<APITrack>}
  */
 async function fetch_track_data(id) {
@@ -74,8 +79,58 @@ function traverse_track_list_container(node_length) {
 	return dom_list;
 }
 
+/**
+ * @param {string[]} countries
+ * @returns {HTMLSpanElement}
+ */
+function create_availability_span(countries) {
+	const countries_string = countries.length <= 4
+		? countries.join(", ")
+		: countries.slice(0, 3).join(", ") + ` and ${data.available_countries.length - 4} more!`;
+
+	const text = document.createTextNode(`Available in: ${countries_string}`);
+	const span = document.createElement("span");
+	span.style.fontSize = "10px";
+	span.appendChild(text);
+	span.addEventListener("contextmenu", (e) => {
+		e.preventDefault();
+		console.info(countries);
+	});
+
+	return span;
+}
+
+/**
+ * @param {HTMLSpanElement} span_node
+ * @param {string} user_country
+ * @param {string[]} available_countries
+ * @param {AjaxTrack} track
+ */
+function add_subbing_prob_string(span_node, user_country, available_countries, track) {
+	const not_in_country = !available_countries.includes(user_country);
+	const has_fallback = "FALLBACK" in track;
+
+	const content = span_node.lastChild.textContent;
+
+	if (not_in_country && has_fallback) {
+		span_node.textContent = `${content} | This track will be subbed!`;
+		return;
+	}
+
+	if (not_in_country && !has_fallback) {
+		span_node.textContent = `${content} | This track is unavailable!`;
+		return;
+	}
+}
+
 (async function() {
 	"use strict";
+
+	/** @type {DeezerAppState} */
+	const deezer_app_state = window.__DZR_APP_STATE__;
+
+	/** @type {DeezerPlayer} */
+	const deezer_player = window.dzPlayer;
 
 	/** @type {HTMLMetaElement[]} */
 	const nodes = document.querySelectorAll(`meta[property="music:song"]`);
@@ -83,6 +138,8 @@ function traverse_track_list_container(node_length) {
 
 	for (let i = 0; i < nodes.length; i++) {
 		const node = nodes[i];
+
+		/** @type {[string, string, string]} */
 		const [_, __, id] = SCRIPT_TRACK_REGEX.exec(node.content);
 		const data = await fetch_track_data(id);
 
@@ -91,21 +148,20 @@ function traverse_track_list_container(node_length) {
 			throw new Error(`Failed to a match track from the track list. Current: ${data}`);
 		}
 
-		const countries_string = data.available_countries.length <= 4
-			? data.available_countries.join(", ")
-			: data.available_countries.slice(0, 3).join(", ")
-				+ ` and ${data.available_countries.length - 4} more!`;
+		const ajax_track = deezer_app_state.SONGS.data.find((x) => x.SNG_ID === id);
+		if (ajax_track === undefined) {
+			throw new Error(`Couldn't find a matching track ${id} in the deezer global state`);
+		}
 
-		const text = document.createTextNode(`Available in: ${countries_string}`);
-		const span = document.createElement("span");
-		span.style.fontSize = "10px";
-		span.appendChild(text);
-		matched.label_node.appendChild(span);
+		const display_spanner = create_availability_span(data.available_countries);
+		add_subbing_prob_string(
+			display_spanner,
+			deezer_player.user_status.license_country,
+			data.available_countries,
+			ajax_track,
+		);
 
-		span.addEventListener("contextmenu", (e) => {
-			e.preventDefault();
-			console.info(data.available_countries);
-		});
+		matched.label_node.appendChild(display_spanner);
 
 		await sleep();
 	}
